@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>FixMyFile — Fix Your Files Instantly</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header>
+        <div class="logo">FixMyFile</div>
+
+        <nav>
+            <a href="#tools">Tools</a>
+            <a href="#ai">AI Fixer</a>
+            <a href="#about">About</a>
+        </nav>
+    </header>
+
+
+    <main>
+
+        <!-- HERO SECTION -->
+
+        <section class="hero">
+
+            <div class="badge">
+                ✨ Your files, fixed better
+            </div>
+
+            <h1>
+                Don't edit your file.<br>
+                <span>Just tell us what's wrong.</span>
+            </h1>
+
+            <p>
+                Upload your file, tell FixMyFile what you want,
+                and we'll help you fix it.
+            </p>
+
+            <button class="hero-button" onclick="openUploader()">
+                Upload a File
+            </button>
+
+            <p class="free-text">
+                Free to try • No software installation
+            </p>
+
+        </section>
+
+
+        <!-- TOOLS -->
+
+        <section id="tools" class="tools-section">
+
+            <h2>What do you want to fix?</h2>
+
+            <p class="section-subtitle">
+                Choose a tool or let FixMyFile help you decide.
+            </p>
+
+
+            <div class="tools-grid">
+
+                <div class="tool-card" onclick="selectTool('Compress PDF')">
+                    <div class="tool-icon">📄</div>
+                    <h3>Compress PDF</h3>
+                    <p>Make your PDF smaller.</p>
+                </div>
+
+
+                <div class="tool-card" onclick="selectTool('Merge PDF')">
+                    <div class="tool-icon">📑</div>
+                    <h3>Merge PDF</h3>
+                    <p>Combine multiple PDFs.</p>
+                </div>
+
+
+                <div class="tool-card" onclick="selectTool('Split PDF')">
+                    <div class="tool-icon">✂️</div>
+                    <h3>Split PDF</h3>
+                    <p>Separate PDF pages.</p>
+                </div>
+
+
+                <div class="tool-card" onclick="selectTool('Image to PDF')">
+                    <div class="tool-icon">🖼️</div>
+                    <h3>Image → PDF</h3>
+                    <p>Turn images into a PDF.</p>
+                </div>
+
+
+                <div class="tool-card" onclick="selectTool('Compress Image')">
+                    <div class="tool-icon">🗜️</div>
+                    <h3>Compress Image</h3>
+                    <p>Reduce image file size.</p>
+                </div>
+
+
+                <div class="tool-card ai-card" onclick="selectTool('AI Professional Fix')">
+                    <div class="tool-icon">✨</div>
+                    <h3>AI Professional Fix</h3>
+                    <p>Make your document look professional.</p>
+
+                    <span class="coming-soon">
+                        Coming soon
+                    </span>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- AI FEATURE -->
+
+        <section id="ai" class="ai-section">
+
+            <div class="ai-content">
+
+                <div class="ai-label">
+                    ✨ AI DOCUMENT DESIGNER
+                </div>
+
+                <h2>
+                    Your document doesn't need
+                    an editor. It needs FixMyFile.
+                </h2>
+
+                <p>
+                    Upload a business document, rate list,
+                    catalogue or report and simply tell us
+                    what you want changed.
+                </p>
+
+                <div class="example">
+
+                    <strong>You:</strong>
+
+                    <p>
+                        "Make this rate list look professional.
+                        Fix the alignment, spacing and fonts,
+                        and add suitable product images."
+                    </p>
+
+                </div>
+
+                <div class="arrow">↓</div>
+
+                <div class="result">
+                    ✨ FixMyFile creates a professional version.
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- WORKSPACE -->
+
+<section id="uploader" class="uploader-section">
+
+    <div class="workspace">
+
+        <div class="workspace-header">
+
+            <div>
+                <div class="ai-label">FIXMYFILE TOOL</div>
+
+                <h2 id="toolTitle">
+                    Choose a tool
+                </h2>
+
+                <p id="toolDescription">
+                    Select one of the tools above to get started.
+                </p>
+            </div>
+
+            <button
+                class="change-tool"
+                onclick="document.getElementById('tools').scrollIntoView({behavior:'smooth'})"
+            >
+                Change Tool
+            </button>
+
+        </div>
+
+
+        <div class="upload-box">
+
+            <div class="upload-icon">
+                📁
+            </div>
+
+            <h2 id="uploadTitle">
+                Upload your file
+            </h2>
+
+            <p id="uploadDescription">
+                Choose a file to get started.
+            </p>
+
+
+            <input
+                type="file"
+                id="fileInput"
+                hidden
+            >
+
+
+            <button
+                class="upload-button"
+                onclick="document.getElementById('fileInput').click()"
+            >
+                Choose File
+            </button>
+
+
+            <div id="fileList"></div>
+
+
+            <button
+                id="processButton"
+                class="process-button"
+                onclick="processFiles()"
+                disabled
+            >
+                Fix My File →
+            </button>
+
+
+            <div id="status"></div>
+
+        </div>
+
+    </div>
+
+</section>
+
+    </main>
+
+
+    <footer id="about">
+
+        <div class="logo">FixMyFile</div>
+
+        <p>
+            Upload it. Fix it. Download it.
+        </p>
+
+        <p class="copyright">
+            © 2026 FixMyFile
+        </p>
+
+    </footer>
+
+
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
