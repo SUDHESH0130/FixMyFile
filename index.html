@@ -111,6 +111,18 @@
                     </span>
                 </div>
 
+                <div class="tool-card" onclick="selectTool('PDF to JPG')">
+                    <div class="tool-icon">🖼️</div>
+                     <h3>PDF → JPG</h3>
+                    <p>Convert PDF pages into JPG images.</p>
+                </div>
+
+                <div class="tool-card" onclick="selectTool('PDF to Word')">
+                     <div class="tool-icon">📝</div>
+                     <h3>PDF → Word</h3>
+                   <p>Convert PDF text into an editable Word document.</p>
+                </div>
+
             </div>
 
         </section>
@@ -261,6 +273,13 @@
 
 
     <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+
 <script src="app.js"></script>
 
 </body>

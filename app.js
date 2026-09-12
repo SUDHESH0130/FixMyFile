@@ -13,6 +13,18 @@ const uploadDescription = document.getElementById("uploadDescription");
 
 
 /* =================================
+   PDF.JS CONFIGURATION
+================================= */
+
+if (typeof pdfjsLib !== "undefined") {
+
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+}
+
+
+/* =================================
    TOOL SELECTION
 ================================= */
 
@@ -22,24 +34,28 @@ function selectTool(tool) {
     selectedFiles = [];
 
     fileInput.value = "";
-
     fileList.innerHTML = "";
     statusBox.innerHTML = "";
 
     processButton.disabled = true;
+
+
+    /* ===============================
+       COMPRESS PDF
+    =============================== */
 
     if (tool === "Compress PDF") {
 
         toolTitle.textContent = "Compress PDF";
 
         toolDescription.textContent =
-            "Reduce the size of your PDF.";
+            "Reduce PDF file size while keeping the document readable.";
 
         uploadTitle.textContent =
             "Upload your PDF";
 
         uploadDescription.textContent =
-            "Choose a PDF file.";
+            "Best for scanned PDFs, image-heavy PDFs and large documents.";
 
         fileInput.accept = ".pdf";
 
@@ -49,6 +65,11 @@ function selectTool(tool) {
             "Compress PDF →";
 
     }
+
+
+    /* ===============================
+       MERGE PDF
+    =============================== */
 
     else if (tool === "Merge PDF") {
 
@@ -72,12 +93,17 @@ function selectTool(tool) {
 
     }
 
+
+    /* ===============================
+       SPLIT PDF
+    =============================== */
+
     else if (tool === "Split PDF") {
 
         toolTitle.textContent = "Split PDF";
 
         toolDescription.textContent =
-            "Extract selected pages from a PDF.";
+            "Separate every page of your PDF into individual files.";
 
         uploadTitle.textContent =
             "Upload your PDF";
@@ -94,18 +120,23 @@ function selectTool(tool) {
 
     }
 
+
+    /* ===============================
+       IMAGE → PDF
+    =============================== */
+
     else if (tool === "Image to PDF") {
 
         toolTitle.textContent = "Image → PDF";
 
         toolDescription.textContent =
-            "Turn your images into a PDF.";
+            "Turn JPG, PNG or WebP images into a PDF.";
 
         uploadTitle.textContent =
             "Upload your images";
 
         uploadDescription.textContent =
-            "Select one or more JPG or PNG images.";
+            "Select one or more images.";
 
         fileInput.accept =
             ".jpg,.jpeg,.png,.webp";
@@ -117,12 +148,17 @@ function selectTool(tool) {
 
     }
 
+
+    /* ===============================
+       IMAGE COMPRESSION
+    =============================== */
+
     else if (tool === "Compress Image") {
 
         toolTitle.textContent = "Compress Image";
 
         toolDescription.textContent =
-            "Reduce image size while keeping it usable.";
+            "Reduce image size while keeping good quality.";
 
         uploadTitle.textContent =
             "Upload your image";
@@ -139,6 +175,59 @@ function selectTool(tool) {
             "Compress Image →";
 
     }
+
+
+    /* ===============================
+       PDF → JPG
+    =============================== */
+
+    else if (tool === "PDF to JPG") {
+
+        toolTitle.textContent = "PDF → JPG";
+
+        toolDescription.textContent =
+            "Convert every PDF page into a high-quality JPG image.";
+
+        uploadTitle.textContent =
+            "Upload your PDF";
+
+        uploadDescription.textContent =
+            "Every page will be converted and downloaded as a ZIP.";
+
+        fileInput.accept = ".pdf";
+
+        fileInput.multiple = false;
+
+        processButton.textContent =
+            "Convert to JPG →";
+
+    }
+
+    else if (tool === "PDF to Word") {
+
+    toolTitle.textContent = "PDF → Word";
+
+    toolDescription.textContent =
+        "Convert PDF text into an editable Word document.";
+
+    uploadTitle.textContent =
+        "Upload your PDF";
+
+    uploadDescription.textContent =
+        "Text will be extracted and placed into an editable Word document.";
+
+    fileInput.accept = ".pdf";
+
+    fileInput.multiple = false;
+
+    processButton.textContent =
+        "Convert to Word →";
+}
+
+
+    /* ===============================
+       AI PROFESSIONAL FIX
+    =============================== */
 
     else if (tool === "AI Professional Fix") {
 
@@ -167,9 +256,11 @@ function selectTool(tool) {
             "<div class='info-message'>✨ AI Professional Fix is our next major feature.</div>";
     }
 
+
     document.getElementById("uploader").scrollIntoView({
         behavior: "smooth"
     });
+
 }
 
 
@@ -179,7 +270,8 @@ function selectTool(tool) {
 
 fileInput.addEventListener("change", function () {
 
-    selectedFiles = Array.from(fileInput.files);
+    selectedFiles =
+        Array.from(fileInput.files);
 
     fileList.innerHTML = "";
 
@@ -188,14 +280,17 @@ fileInput.addEventListener("change", function () {
         processButton.disabled = true;
 
         return;
+
     }
 
 
     selectedFiles.forEach((file) => {
 
-        const item = document.createElement("div");
+        const item =
+            document.createElement("div");
 
-        item.className = "file-item";
+        item.className =
+            "file-item";
 
         item.innerHTML =
             `<span>📄 ${file.name}</span>
@@ -225,6 +320,7 @@ async function processFiles() {
         );
 
         return;
+
     }
 
 
@@ -268,6 +364,18 @@ async function processFiles() {
 
         }
 
+        else if (selectedTool === "PDF to JPG") {
+
+            await pdfToJPG();
+
+        }
+
+        else if (selectedTool === "PDF to Word") {
+
+    await pdfToWord();
+
+        }
+
     }
 
     catch (error) {
@@ -281,7 +389,15 @@ async function processFiles() {
 
     }
 
-    processButton.disabled = false;
+    finally {
+
+        if (selectedTool !== "AI Professional Fix") {
+
+            processButton.disabled = false;
+
+        }
+
+    }
 
 }
 
@@ -300,6 +416,7 @@ async function mergePDFs() {
         );
 
         return;
+
     }
 
 
@@ -322,7 +439,9 @@ async function mergePDFs() {
             );
 
         pages.forEach(page => {
+
             mergedPDF.addPage(page);
+
         });
 
     }
@@ -343,6 +462,7 @@ async function mergePDFs() {
         "✅ PDFs successfully merged!",
         "success"
     );
+
 }
 
 
@@ -376,8 +496,18 @@ async function imagesToPDF() {
 
         else {
 
+            /*
+              PNG and WebP are first converted
+              to PNG through the browser canvas.
+            */
+
+            const converted =
+                await imageFileToPNG(file);
+
             image =
-                await pdf.embedPng(imageBytes);
+                await pdf.embedPng(
+                    converted
+                );
 
         }
 
@@ -399,9 +529,11 @@ async function imagesToPDF() {
         page.drawImage(image, {
 
             x: 0,
+
             y: 0,
 
             width: imageWidth,
+
             height: imageHeight
 
         });
@@ -424,6 +556,7 @@ async function imagesToPDF() {
         "✅ PDF created successfully!",
         "success"
     );
+
 }
 
 
@@ -458,7 +591,9 @@ async function compressImage() {
     if (width > maxWidth) {
 
         height =
-            height * maxWidth / width;
+            height *
+            maxWidth /
+            width;
 
         width =
             maxWidth;
@@ -467,6 +602,7 @@ async function compressImage() {
 
 
     canvas.width = width;
+
     canvas.height = height;
 
 
@@ -483,28 +619,24 @@ async function compressImage() {
     );
 
 
-    canvas.toBlob(
-
-        function(blob) {
-
-            downloadFile(
-                blob,
-                "FixMyFile-Compressed.jpg",
-                "image/jpeg"
-            );
+    const blob =
+        await canvasToBlob(
+            canvas,
+            "image/jpeg",
+            0.75
+        );
 
 
-            showStatus(
-                "✅ Image compressed successfully!",
-                "success"
-            );
+    downloadFile(
+        blob,
+        "FixMyFile-Compressed.jpg",
+        "image/jpeg"
+    );
 
-        },
 
-        "image/jpeg",
-
-        0.75
-
+    showStatus(
+        "✅ Image compressed successfully!",
+        "success"
     );
 
 }
@@ -540,19 +672,30 @@ async function splitPDF() {
         );
 
         return;
+
     }
 
 
     /*
-       MVP behaviour:
-       Create a separate PDF for every page.
+       Create a ZIP instead of triggering
+       many individual browser downloads.
     */
+
+    const zip =
+        new JSZip();
+
 
     for (
         let i = 0;
         i < pageCount;
         i++
     ) {
+
+        showStatus(
+            `⏳ Splitting page ${i + 1} of ${pageCount}...`,
+            "loading"
+        );
+
 
         const newPDF =
             await PDFLib.PDFDocument.create();
@@ -572,27 +715,357 @@ async function splitPDF() {
             await newPDF.save();
 
 
-        downloadFile(
-            result,
+        zip.file(
             `FixMyFile-Page-${i + 1}.pdf`,
-            "application/pdf"
+            result
         );
 
     }
 
 
+    const zipBlob =
+        await zip.generateAsync({
+            type: "blob"
+        });
+
+
+    downloadFile(
+        zipBlob,
+        "FixMyFile-Split-Pages.zip",
+        "application/zip"
+    );
+
+
     showStatus(
-        `✅ Split complete! ${pageCount} pages created.`,
+        `✅ Split complete! ${pageCount} pages are inside the ZIP.`,
         "success"
     );
+
 }
 
 
 /* =================================
-   PDF COMPRESSION
+   TRUE PDF COMPRESSION
 ================================= */
 
 async function compressPDF() {
+
+    const file =
+        selectedFiles[0];
+
+
+    const originalBytes =
+        await file.arrayBuffer();
+
+
+    const originalSize =
+        originalBytes.byteLength;
+
+
+    showStatus(
+        "⏳ Analyzing PDF pages...",
+        "loading"
+    );
+
+
+    /*
+       First create a normal optimized copy.
+       This is useful for PDFs that contain
+       mostly vector/text content.
+    */
+
+    const originalPDF =
+        await PDFLib.PDFDocument.load(
+            originalBytes
+        );
+
+
+    const structuralResult =
+        await originalPDF.save({
+            useObjectStreams: true
+        });
+
+
+    /*
+       Now create an image-compressed version.
+       This is particularly useful for scanned
+       and image-heavy PDFs.
+    */
+
+    const pdfJS =
+        await pdfjsLib.getDocument({
+            data: originalBytes
+        }).promise;
+
+
+    const compressedPDF =
+        await PDFLib.PDFDocument.create();
+
+
+    for (
+        let pageNumber = 1;
+        pageNumber <= pdfJS.numPages;
+        pageNumber++
+    ) {
+
+        showStatus(
+            `⏳ Compressing page ${pageNumber} of ${pdfJS.numPages}...`,
+            "loading"
+        );
+
+
+        const page =
+            await pdfJS.getPage(
+                pageNumber
+            );
+
+
+        const baseViewport =
+            page.getViewport({
+                scale: 1
+            });
+
+
+        /*
+           Keep the rendered page reasonably small
+           so very large scanned pages don't crash
+           the browser.
+        */
+
+        const maxPixels =
+            4000000;
+
+
+        const normalScale = 1.25;
+
+
+        let scale =
+            normalScale;
+
+
+        const estimatedPixels =
+            baseViewport.width *
+            baseViewport.height *
+            scale *
+            scale;
+
+
+        if (
+            estimatedPixels >
+            maxPixels
+        ) {
+
+            scale =
+                Math.sqrt(
+                    maxPixels /
+                    (
+                        baseViewport.width *
+                        baseViewport.height
+                    )
+                );
+
+        }
+
+
+        scale =
+            Math.max(
+                0.5,
+                scale
+            );
+
+
+        const viewport =
+            page.getViewport({
+                scale: scale
+            });
+
+
+        const canvas =
+            document.createElement("canvas");
+
+
+        canvas.width =
+            Math.ceil(viewport.width);
+
+        canvas.height =
+            Math.ceil(viewport.height);
+
+
+        const context =
+            canvas.getContext(
+                "2d",
+                {
+                    alpha: false
+                }
+            );
+
+
+        context.fillStyle =
+            "#ffffff";
+
+        context.fillRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+
+        await page.render({
+            canvasContext: context,
+            viewport: viewport
+        }).promise;
+
+
+        /*
+           JPEG quality 0.65 gives a useful
+           compression level for scanned PDFs.
+        */
+
+        const jpegBlob =
+            await canvasToBlob(
+                canvas,
+                "image/jpeg",
+                0.65
+            );
+
+
+        const jpegBytes =
+            await jpegBlob.arrayBuffer();
+
+
+        const image =
+            await compressedPDF.embedJpg(
+                jpegBytes
+            );
+
+
+        /*
+           PDF points are based on the
+           unscaled viewport.
+        */
+
+        const outputPage =
+            compressedPDF.addPage([
+                baseViewport.width,
+                baseViewport.height
+            ]);
+
+
+        outputPage.drawImage(
+            image,
+            {
+                x: 0,
+                y: 0,
+
+                width:
+                    baseViewport.width,
+
+                height:
+                    baseViewport.height
+            }
+        );
+
+
+        canvas.width = 1;
+
+        canvas.height = 1;
+
+    }
+
+
+    const rasterResult =
+        await compressedPDF.save({
+            useObjectStreams: true
+        });
+
+
+    /*
+       Choose whichever version is actually
+       smaller.
+    */
+
+    let finalResult =
+        structuralResult;
+
+    let method =
+        "optimized";
+
+
+    if (
+        rasterResult.byteLength <
+        structuralResult.byteLength
+    ) {
+
+        finalResult =
+            rasterResult;
+
+        method =
+            "image compression";
+
+    }
+
+
+    /*
+       If neither method actually reduces the
+       file, don't pretend that compression worked.
+    */
+
+    if (
+        finalResult.byteLength >=
+        originalSize
+    ) {
+
+        downloadFile(
+            originalBytes,
+            "FixMyFile-Compressed.pdf",
+            "application/pdf"
+        );
+
+
+        showStatus(
+            `⚠️ This PDF could not be made smaller. The original file was downloaded unchanged (${formatBytes(originalSize)}).`,
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    const savedBytes =
+        originalSize -
+        finalResult.byteLength;
+
+
+    const savedPercent =
+        (
+            savedBytes /
+            originalSize *
+            100
+        ).toFixed(1);
+
+
+    downloadFile(
+        finalResult,
+        "FixMyFile-Compressed.pdf",
+        "application/pdf"
+    );
+
+
+    showStatus(
+        `✅ PDF compressed! ${formatBytes(originalSize)} → ${formatBytes(finalResult.byteLength)} (${savedPercent}% smaller).`,
+        "success"
+    );
+
+}
+
+
+/* =================================
+   PDF → JPG
+================================= */
+
+async function pdfToJPG() {
 
     const file =
         selectedFiles[0];
@@ -603,64 +1076,297 @@ async function compressPDF() {
 
 
     const pdf =
-        await PDFLib.PDFDocument.load(bytes);
+        await pdfjsLib.getDocument({
+            data: bytes
+        }).promise;
 
 
-    /*
-       Initial MVP optimization.
+    const zip =
+        new JSZip();
 
-       This rewrites the PDF using
-       compressed object streams.
 
-       Later we will add true
-       image downsampling/raster
-       compression.
-    */
+    for (
+        let pageNumber = 1;
+        pageNumber <= pdf.numPages;
+        pageNumber++
+    ) {
 
-    const result =
-        await pdf.save({
-            useObjectStreams: true
+        showStatus(
+            `⏳ Converting page ${pageNumber} of ${pdf.numPages}...`,
+            "loading"
+        );
+
+
+        const page =
+            await pdf.getPage(
+                pageNumber
+            );
+
+
+        const baseViewport =
+            page.getViewport({
+                scale: 1
+            });
+
+
+        const maxPixels =
+            8000000;
+
+
+        let scale =
+            1.5;
+
+
+        const estimatedPixels =
+            baseViewport.width *
+            baseViewport.height *
+            scale *
+            scale;
+
+
+        if (
+            estimatedPixels >
+            maxPixels
+        ) {
+
+            scale =
+                Math.sqrt(
+                    maxPixels /
+                    (
+                        baseViewport.width *
+                        baseViewport.height
+                    )
+                );
+
+        }
+
+
+        const viewport =
+            page.getViewport({
+                scale: scale
+            });
+
+
+        const canvas =
+            document.createElement("canvas");
+
+
+        canvas.width =
+            Math.ceil(viewport.width);
+
+        canvas.height =
+            Math.ceil(viewport.height);
+
+
+        const context =
+            canvas.getContext(
+                "2d",
+                {
+                    alpha: false
+                }
+            );
+
+
+        context.fillStyle =
+            "#ffffff";
+
+        context.fillRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+
+        await page.render({
+            canvasContext: context,
+            viewport: viewport
+        }).promise;
+
+
+        const jpgBlob =
+            await canvasToBlob(
+                canvas,
+                "image/jpeg",
+                0.90
+            );
+
+
+        zip.file(
+            `FixMyFile-Page-${pageNumber}.jpg`,
+            jpgBlob
+        );
+
+
+        canvas.width = 1;
+
+        canvas.height = 1;
+
+    }
+
+
+    showStatus(
+        "⏳ Creating ZIP file...",
+        "loading"
+    );
+
+
+    const zipBlob =
+        await zip.generateAsync({
+            type: "blob"
         });
 
 
     downloadFile(
-        result,
-        "FixMyFile-Optimized.pdf",
-        "application/pdf"
+        zipBlob,
+        "FixMyFile-PDF-to-JPG.zip",
+        "application/zip"
     );
 
 
     showStatus(
-        "✅ PDF optimized successfully!",
+        `✅ PDF converted successfully! ${pdf.numPages} JPG images are inside the ZIP.`,
         "success"
     );
+
 }
 
 
 /* =================================
-   IMAGE LOADER
+   IMAGE FILE → PNG
+================================= */
+
+async function imageFileToPNG(file) {
+
+    const image =
+        await loadImage(file);
+
+
+    const canvas =
+        document.createElement("canvas");
+
+
+    canvas.width =
+        image.width;
+
+    canvas.height =
+        image.height;
+
+
+    const context =
+        canvas.getContext("2d");
+
+
+    context.drawImage(
+        image,
+        0,
+        0
+    );
+
+
+    const blob =
+        await canvasToBlob(
+            canvas,
+            "image/png"
+        );
+
+
+    return blob.arrayBuffer();
+
+}
+
+
+/* =================================
+   LOAD IMAGE
 ================================= */
 
 function loadImage(file) {
 
-    return new Promise((resolve, reject) => {
+    return new Promise(
+        (resolve, reject) => {
 
-        const image =
-            new Image();
-
-
-        image.onload =
-            () => resolve(image);
+            const image =
+                new Image();
 
 
-        image.onerror =
-            reject;
+            const url =
+                URL.createObjectURL(file);
 
 
-        image.src =
-            URL.createObjectURL(file);
+            image.onload =
+                () => {
 
-    });
+                    URL.revokeObjectURL(
+                        url
+                    );
+
+                    resolve(image);
+
+                };
+
+
+            image.onerror =
+                () => {
+
+                    URL.revokeObjectURL(
+                        url
+                    );
+
+                    reject(
+                        new Error(
+                            "Unable to load image."
+                        )
+                    );
+
+                };
+
+
+            image.src =
+                url;
+
+        }
+    );
+
+}
+
+
+/* =================================
+   CANVAS → BLOB
+================================= */
+
+function canvasToBlob(
+    canvas,
+    type,
+    quality
+) {
+
+    return new Promise(
+        (resolve, reject) => {
+
+            canvas.toBlob(
+                blob => {
+
+                    if (!blob) {
+
+                        reject(
+                            new Error(
+                                "Could not create image."
+                            )
+                        );
+
+                        return;
+
+                    }
+
+                    resolve(blob);
+
+                },
+                type,
+                quality
+            );
+
+        }
+    );
 
 }
 
@@ -680,32 +1386,54 @@ function downloadFile(
             ? data
             : new Blob(
                 [data],
-                { type: type }
+                {
+                    type: type
+                }
             );
 
 
     const url =
-        URL.createObjectURL(blob);
+        URL.createObjectURL(
+            blob
+        );
 
 
     const link =
         document.createElement("a");
 
 
-    link.href = url;
+    link.href =
+        url;
+
 
     link.download =
         filename;
 
 
-    document.body.appendChild(link);
+    document.body.appendChild(
+        link
+    );
+
 
     link.click();
+
 
     link.remove();
 
 
-    URL.revokeObjectURL(url);
+    /*
+       Give the browser a moment before
+       releasing the object URL.
+    */
+
+    setTimeout(
+        () => {
+            URL.revokeObjectURL(
+                url
+            );
+        },
+        1000
+    );
 
 }
 
@@ -734,8 +1462,11 @@ function showStatus(
 
 function formatBytes(bytes) {
 
-    if (bytes === 0)
+    if (bytes === 0) {
+
         return "0 Bytes";
+
+    }
 
 
     const units = [
@@ -757,11 +1488,345 @@ function formatBytes(bytes) {
         parseFloat(
             (
                 bytes /
-                Math.pow(1024, index)
+                Math.pow(
+                    1024,
+                    index
+                )
             ).toFixed(2)
         )
         + " "
         + units[index]
     );
+
+}
+
+/* =================================
+   PDF → WORD
+================================= */
+
+async function pdfToWord() {
+
+    const file = selectedFiles[0];
+
+    const bytes =
+        await file.arrayBuffer();
+
+    if (
+        typeof pdfjsLib === "undefined" ||
+        typeof docx === "undefined"
+    ) {
+
+        throw new Error(
+            "Required conversion libraries are not loaded."
+        );
+
+    }
+
+
+    showStatus(
+        "⏳ Reading PDF text...",
+        "loading"
+    );
+
+
+    const pdf =
+        await pdfjsLib.getDocument({
+            data: bytes
+        }).promise;
+
+
+    const children = [];
+
+
+    for (
+        let pageNumber = 1;
+        pageNumber <= pdf.numPages;
+        pageNumber++
+    ) {
+
+        showStatus(
+            `⏳ Reading page ${pageNumber} of ${pdf.numPages}...`,
+            "loading"
+        );
+
+
+        const page =
+            await pdf.getPage(
+                pageNumber
+            );
+
+
+        const textContent =
+            await page.getTextContent();
+
+
+        /*
+           PDF.js gives us individual text
+           fragments. We group them into
+           lines using their Y position.
+        */
+
+        const lines = [];
+
+        const tolerance = 4;
+
+
+        for (
+            const item of textContent.items
+        ) {
+
+            if (
+                !item.str ||
+                !item.str.trim()
+            ) {
+
+                continue;
+
+            }
+
+
+            const x =
+                item.transform[4];
+
+            const y =
+                item.transform[5];
+
+
+            let line =
+                lines.find(
+                    existingLine =>
+                        Math.abs(
+                            existingLine.y - y
+                        ) <= tolerance
+                );
+
+
+            if (!line) {
+
+                line = {
+                    y: y,
+                    items: []
+                };
+
+                lines.push(line);
+
+            }
+
+
+            line.items.push({
+                x: x,
+                text: item.str
+            });
+
+        }
+
+
+        /*
+           Sort lines from top to bottom.
+           PDF coordinates start from the
+           bottom, so larger Y comes first.
+        */
+
+        lines.sort(
+            (a, b) =>
+                b.y - a.y
+        );
+
+
+        for (
+            const line of lines
+        ) {
+
+            /*
+               Put text fragments in their
+               left-to-right order.
+            */
+
+            line.items.sort(
+                (a, b) =>
+                    a.x - b.x
+            );
+
+
+            let lineText = "";
+
+
+            for (
+                let i = 0;
+                i < line.items.length;
+                i++
+            ) {
+
+                const current =
+                    line.items[i];
+
+                const previous =
+                    line.items[i - 1];
+
+
+                if (
+                    previous &&
+                    current.x -
+                    (
+                        previous.x +
+                        estimateTextWidth(
+                            previous.text
+                        )
+                    ) > 8
+                ) {
+
+                    lineText += " ";
+
+                }
+
+
+                lineText +=
+                    current.text;
+
+            }
+
+
+            lineText =
+                lineText
+                    .replace(/\s+/g, " ")
+                    .trim();
+
+
+            if (!lineText) {
+
+                continue;
+
+            }
+
+
+            /*
+               Basic heading detection.
+               This isn't intended to perfectly
+               reproduce every PDF layout, but
+               gives common documents a cleaner
+               Word structure.
+            */
+
+            const isHeading =
+                lineText.length < 80 &&
+                (
+                    lineText ===
+                    lineText.toUpperCase()
+                    ||
+                    lineText.endsWith(":")
+                );
+
+
+            children.push(
+                new docx.Paragraph({
+
+                    children: [
+                        new docx.TextRun({
+                            text: lineText,
+                            bold: isHeading,
+                            size: isHeading
+                                ? 26
+                                : 22
+                        })
+                    ],
+
+                    spacing: {
+                        after: isHeading
+                            ? 180
+                            : 100
+                    }
+
+                })
+            );
+
+        }
+
+
+        /*
+           Add a page break between
+           original PDF pages.
+        */
+
+        if (
+            pageNumber <
+            pdf.numPages
+        ) {
+
+            children.push(
+                new docx.Paragraph({
+                    children: [
+                        new docx.PageBreak()
+                    ]
+                })
+            );
+
+        }
+
+    }
+
+
+    if (!children.length) {
+
+        throw new Error(
+            "No selectable text was found in this PDF."
+        );
+
+    }
+
+
+    showStatus(
+        "⏳ Creating editable Word document...",
+        "loading"
+    );
+
+
+    const document =
+        new docx.Document({
+
+            sections: [
+                {
+                    properties: {},
+                    children: children
+                }
+            ]
+
+        });
+
+
+    const blob =
+        await docx.Packer.toBlob(
+            document
+        );
+
+
+    downloadFile(
+        blob,
+        "FixMyFile-PDF-to-Word.docx",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    );
+
+
+    showStatus(
+        "✅ PDF converted to an editable Word document!",
+        "success"
+    );
+
+}
+
+
+/* =================================
+   ESTIMATE TEXT WIDTH
+================================= */
+
+function estimateTextWidth(text) {
+
+    /*
+       Approximate PDF text width.
+       Used only to determine whether
+       a visible space exists between
+       separate text fragments.
+    */
+
+    return text.length * 5;
 
 }
