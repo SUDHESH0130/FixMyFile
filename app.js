@@ -1505,312 +1505,517 @@ function formatBytes(bytes) {
 ================================= */
 
 async function pdfToWord() {
+    alert("NEW PDF TO WORD CODE IS RUNNING");
 
-    const file = selectedFiles[0];
+    try {
+        showStatus("Reading PDF...", "loading");
 
-    const bytes =
-        await file.arrayBuffer();
+        if (typeof pdfjsLib === "undefined") {
+            throw new Error("PDF.js is not loaded.");
+        }
 
-    if (
-        typeof pdfjsLib === "undefined" ||
-        typeof docx === "undefined"
-    ) {
+        if (typeof docx === "undefined") {
+            throw new Error("DOCX library is not loaded.");
+        }
 
-        throw new Error(
-            "Required conversion libraries are not loaded."
-        );
+        const file = selectedFiles[0];
 
-    }
+        if (!file) {
+            throw new Error("Please select a PDF.");
+        }
 
+        const buffer = await file.arrayBuffer();
 
-    showStatus(
-        "⏳ Reading PDF text...",
-        "loading"
-    );
-
-
-    const pdf =
-        await pdfjsLib.getDocument({
-            data: bytes
+        const pdf = await pdfjsLib.getDocument({
+            data: new Uint8Array(buffer)
         }).promise;
 
+        const children = [];
 
-    const children = [];
+        // ============================================================
+        // WORD HELPERS
+        // ============================================================
 
+        function makeCell(text, bold = false) {
+            return new docx.TableCell({
+                children: [
+                    new docx.Paragraph({
+                        children: [
+                            new docx.TextRun({
+                                text: text || "",
+                                bold: bold,
+                                size: 20
+                            })
+                        ],
+                        spacing: {
+                            after: 0
+                        }
+                    })
+                ],
+                margins: {
+                    top: 80,
+                    bottom: 80,
+                    left: 100,
+                    right: 100
+                }
+            });
+        }
 
-    for (
-        let pageNumber = 1;
-        pageNumber <= pdf.numPages;
-        pageNumber++
-    ) {
+        function makeTable(headers, rows) {
+
+            const wordRows = [];
+
+            // Header
+            wordRows.push(
+                new docx.TableRow({
+                    children: headers.map(header =>
+                        makeCell(header, true)
+                    )
+                })
+            );
+
+            // Data
+            rows.forEach(row => {
+
+                wordRows.push(
+                    new docx.TableRow({
+                        children: headers.map((_, index) =>
+                            makeCell(row[index] || "")
+                        )
+                    })
+                );
+
+            });
+
+            return new docx.Table({
+                rows: wordRows,
+                width: {
+                    size: 100,
+                    type: docx.WidthType.PERCENTAGE
+                },
+                borders: {
+                    top: {
+                        style: docx.BorderStyle.SINGLE,
+                        size: 4
+                    },
+                    bottom: {
+                        style: docx.BorderStyle.SINGLE,
+                        size: 4
+                    },
+                    left: {
+                        style: docx.BorderStyle.SINGLE,
+                        size: 4
+                    },
+                    right: {
+                        style: docx.BorderStyle.SINGLE,
+                        size: 4
+                    },
+                    insideHorizontal: {
+                        style: docx.BorderStyle.SINGLE,
+                        size: 4
+                    },
+                    insideVertical: {
+                        style: docx.BorderStyle.SINGLE,
+                        size: 4
+                    }
+                }
+            });
+        }
+
+        // ============================================================
+        // GROUP PDF TEXT INTO LINES
+        // ============================================================
+
+        function makeLines(items) {
+
+            const lines = [];
+
+            items.sort((a, b) => {
+
+                if (Math.abs(a.y - b.y) <= 5) {
+                    return a.x - b.x;
+                }
+
+                return b.y - a.y;
+            });
+
+            for (const item of items) {
+
+                let existing = null;
+
+                for (const line of lines) {
+
+                    if (Math.abs(line.y - item.y) <= 5) {
+                        existing = line;
+                        break;
+                    }
+                }
+
+                if (existing) {
+
+                    existing.items.push(item);
+
+                } else {
+
+                    lines.push({
+                        y: item.y,
+                        items: [item]
+                    });
+
+                }
+            }
+
+            lines.forEach(line => {
+                line.items.sort((a, b) => a.x - b.x);
+            });
+
+            lines.sort((a, b) => b.y - a.y);
+
+            return lines;
+        }
+
+        // ============================================================
+        // NORMAL TEXT
+        // ============================================================
+
+        function addParagraph(text, bold = false) {
+
+            if (!text.trim()) {
+                return;
+            }
+
+            children.push(
+                new docx.Paragraph({
+                    children: [
+                        new docx.TextRun({
+                            text: text.trim(),
+                            bold: bold,
+                            size: bold ? 25 : 21
+                        })
+                    ],
+                    spacing: {
+                        before: bold ? 100 : 20,
+                        after: 70,
+                        line: 260
+                    }
+                })
+            );
+        }
+
+        // ============================================================
+        // EXACT TABLE EXTRACTION
+        //
+        // YOUR PDF:
+        //
+        // IMAGE          ~40
+        // BRAND / TYPE   ~90
+        // SPECIFICATION  ~239
+        // PRICE          ~517
+        //
+        // We deliberately use these coordinates.
+        // ============================================================
+
+        function extractThreeColumnRow(line) {
+
+            const brand = [];
+            const specification = [];
+            const price = [];
+
+            for (const item of line.items) {
+
+                const x = item.x;
+                const text = item.text;
+
+                // IMAGE column
+                if (x < 85) {
+                    continue;
+                }
+
+                // BRAND / TYPE
+                if (x >= 85 && x < 235) {
+
+                    brand.push(text);
+
+                }
+
+                // SPECIFICATION
+                else if (x >= 235 && x < 510) {
+
+                    specification.push(text);
+
+                }
+
+                // PRICE
+                else if (x >= 510) {
+
+                    price.push(text);
+
+                }
+            }
+
+            return [
+                brand.join(" ").replace(/\s+/g, " ").trim(),
+                specification.join(" ").replace(/\s+/g, " ").trim(),
+                price.join(" ").replace(/\s+/g, " ").trim()
+            ];
+        }
+
+        // ============================================================
+        // IS THIS A THREE-COLUMN TABLE HEADER?
+        // ============================================================
+
+        function isThreeColumnHeader(line) {
+
+            const allText = line.items
+                .map(item => item.text)
+                .join(" ")
+                .toUpperCase();
+
+            return (
+                allText.includes("IMAGE") &&
+                allText.includes("PRICE") &&
+                line.items.some(item => item.x >= 500)
+            );
+        }
+
+        // ============================================================
+        // CHECK WHETHER A LINE IS A SECTION HEADING
+        // ============================================================
+
+        function isSectionHeading(text) {
+
+            return /^\d+\.\s+[A-Z]/.test(text);
+        }
+
+        // ============================================================
+        // PROCESS EACH PAGE
+        // ============================================================
+
+        for (
+            let pageNumber = 1;
+            pageNumber <= pdf.numPages;
+            pageNumber++
+        ) {
+
+            showStatus(
+                `Processing page ${pageNumber} of ${pdf.numPages}...`,
+                "loading"
+            );
+
+            const page =
+                await pdf.getPage(pageNumber);
+
+            const content =
+                await page.getTextContent();
+
+            const items =
+                content.items
+                    .filter(item =>
+                        item.str &&
+                        item.str.trim()
+                    )
+                    .map(item => ({
+                        text: item.str.trim(),
+                        x: item.transform[4],
+                        y: item.transform[5],
+                        width: item.width || 0
+                    }));
+
+            // --------------------------------------------------------
+            // SCANNED PAGE
+            // --------------------------------------------------------
+
+            if (items.length === 0) {
+
+                addParagraph(
+                    `Page ${pageNumber}: No selectable text detected. OCR is required for this page.`,
+                    false
+                );
+
+                continue;
+            }
+
+            const lines = makeLines(items);
+
+            let tableRows = [];
+            let tableActive = false;
+
+            function finishTable() {
+
+                if (tableRows.length === 0) {
+                    tableActive = false;
+                    return;
+                }
+
+                children.push(
+                    makeTable(
+                        [
+                            "BRAND / TYPE",
+                            "SPECIFICATION",
+                            "PRICE"
+                        ],
+                        tableRows
+                    )
+                );
+
+                children.push(
+                    new docx.Paragraph({
+                        spacing: {
+                            after: 120
+                        }
+                    })
+                );
+
+                tableRows = [];
+                tableActive = false;
+            }
+
+            // --------------------------------------------------------
+            // PROCESS LINES
+            // --------------------------------------------------------
+
+            for (const line of lines) {
+
+                const text =
+                    line.items
+                        .map(item => item.text)
+                        .join(" ")
+                        .replace(/\s+/g, " ")
+                        .trim();
+
+                if (!text) {
+                    continue;
+                }
+
+                // ----------------------------------------------------
+                // TABLE HEADER
+                // ----------------------------------------------------
+
+                if (isThreeColumnHeader(line)) {
+
+                    finishTable();
+
+                    tableActive = true;
+
+                    continue;
+                }
+
+                // ----------------------------------------------------
+                // SECTION HEADING
+                // ----------------------------------------------------
+
+                if (
+                    tableActive &&
+                    isSectionHeading(text)
+                ) {
+
+                    finishTable();
+
+                    addParagraph(text, true);
+
+                    continue;
+                }
+
+                // ----------------------------------------------------
+                // TABLE ROW
+                // ----------------------------------------------------
+
+                if (tableActive) {
+
+                    const row =
+                        extractThreeColumnRow(line);
+
+                    const hasPrice =
+                        row[2] &&
+                        /₹|\d/.test(row[2]);
+
+                    const hasProduct =
+                        row[0] ||
+                        row[1];
+
+                    if (hasProduct && hasPrice) {
+
+                        tableRows.push(row);
+
+                        continue;
+                    }
+                }
+
+                // ----------------------------------------------------
+                // NORMAL TEXT
+                // ----------------------------------------------------
+
+                const upper =
+                    text.toUpperCase();
+
+                const heading =
+                    text.length < 100 &&
+                    (
+                        text === upper &&
+                        /[A-Z]/.test(text)
+                    );
+
+                addParagraph(text, heading);
+            }
+
+            finishTable();
+        }
+
+        // ============================================================
+        // CREATE DOCX
+        // ============================================================
 
         showStatus(
-            `⏳ Reading page ${pageNumber} of ${pdf.numPages}...`,
+            "Creating Word document...",
             "loading"
         );
 
+        const document =
+            new docx.Document({
+                sections: [
+                    {
+                        properties: {
+                            page: {
+                                margin: {
+                                    top: 720,
+                                    right: 720,
+                                    bottom: 720,
+                                    left: 720
+                                }
+                            }
+                        },
 
-        const page =
-            await pdf.getPage(
-                pageNumber
-            );
-
-
-        const textContent =
-            await page.getTextContent();
-
-
-        /*
-           PDF.js gives us individual text
-           fragments. We group them into
-           lines using their Y position.
-        */
-
-        const lines = [];
-
-        const tolerance = 4;
-
-
-        for (
-            const item of textContent.items
-        ) {
-
-            if (
-                !item.str ||
-                !item.str.trim()
-            ) {
-
-                continue;
-
-            }
-
-
-            const x =
-                item.transform[4];
-
-            const y =
-                item.transform[5];
-
-
-            let line =
-                lines.find(
-                    existingLine =>
-                        Math.abs(
-                            existingLine.y - y
-                        ) <= tolerance
-                );
-
-
-            if (!line) {
-
-                line = {
-                    y: y,
-                    items: []
-                };
-
-                lines.push(line);
-
-            }
-
-
-            line.items.push({
-                x: x,
-                text: item.str
+                        children: children
+                    }
+                ]
             });
 
-        }
+        const blob =
+            await docx.Packer.toBlob(document);
 
-
-        /*
-           Sort lines from top to bottom.
-           PDF coordinates start from the
-           bottom, so larger Y comes first.
-        */
-
-        lines.sort(
-            (a, b) =>
-                b.y - a.y
+        downloadFile(
+            blob,
+            "FixMyFile-PDF-to-Word.docx"
         );
 
+        showStatus(
+            "PDF converted successfully.",
+            "success"
+        );
 
-        for (
-            const line of lines
-        ) {
+    } catch (error) {
 
-            /*
-               Put text fragments in their
-               left-to-right order.
-            */
+        console.error(
+            "PDF to Word error:",
+            error
+        );
 
-            line.items.sort(
-                (a, b) =>
-                    a.x - b.x
-            );
-
-
-            let lineText = "";
-
-
-            for (
-                let i = 0;
-                i < line.items.length;
-                i++
-            ) {
-
-                const current =
-                    line.items[i];
-
-                const previous =
-                    line.items[i - 1];
-
-
-                if (
-                    previous &&
-                    current.x -
-                    (
-                        previous.x +
-                        estimateTextWidth(
-                            previous.text
-                        )
-                    ) > 8
-                ) {
-
-                    lineText += " ";
-
-                }
-
-
-                lineText +=
-                    current.text;
-
-            }
-
-
-            lineText =
-                lineText
-                    .replace(/\s+/g, " ")
-                    .trim();
-
-
-            if (!lineText) {
-
-                continue;
-
-            }
-
-
-            /*
-               Basic heading detection.
-               This isn't intended to perfectly
-               reproduce every PDF layout, but
-               gives common documents a cleaner
-               Word structure.
-            */
-
-            const isHeading =
-                lineText.length < 80 &&
-                (
-                    lineText ===
-                    lineText.toUpperCase()
-                    ||
-                    lineText.endsWith(":")
-                );
-
-
-            children.push(
-                new docx.Paragraph({
-
-                    children: [
-                        new docx.TextRun({
-                            text: lineText,
-                            bold: isHeading,
-                            size: isHeading
-                                ? 26
-                                : 22
-                        })
-                    ],
-
-                    spacing: {
-                        after: isHeading
-                            ? 180
-                            : 100
-                    }
-
-                })
-            );
-
-        }
-
-
-        /*
-           Add a page break between
-           original PDF pages.
-        */
-
-        if (
-            pageNumber <
-            pdf.numPages
-        ) {
-
-            children.push(
-                new docx.Paragraph({
-                    children: [
-                        new docx.PageBreak()
-                    ]
-                })
-            );
-
-        }
-
+        showStatus(
+            "PDF to Word failed: " +
+            error.message,
+            "error"
+        );
     }
-
-
-    if (!children.length) {
-
-        throw new Error(
-            "No selectable text was found in this PDF."
-        );
-
-    }
-
-
-    showStatus(
-        "⏳ Creating editable Word document...",
-        "loading"
-    );
-
-
-    const document =
-        new docx.Document({
-
-            sections: [
-                {
-                    properties: {},
-                    children: children
-                }
-            ]
-
-        });
-
-
-    const blob =
-        await docx.Packer.toBlob(
-            document
-        );
-
-
-    downloadFile(
-        blob,
-        "FixMyFile-PDF-to-Word.docx",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    );
-
-
-    showStatus(
-        "✅ PDF converted to an editable Word document!",
-        "success"
-    );
-
 }
 
 
